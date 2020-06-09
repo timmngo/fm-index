@@ -14,12 +14,8 @@ const template = `
       </div>
       <div style="display: flex; margin-top: 0.5rem;">
       <button @click="initializeSearch">Start Search</button>
-      <button @click="previousSearch" :disabled="!searchStarted"><span class="material-icons">
-      skip_previous
-      </span></button>
-      <button @click="advanceSearch" :disabled="!searchStarted"><span class="material-icons">
-      skip_next
-      </span></button>
+      <button @click="previousSearch" :disabled="!searchStarted">Previous Step</button>
+      <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
       <button @click="resetSearch">Clear</button>
       </div>
     </div>
