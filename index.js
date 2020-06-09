@@ -259,7 +259,7 @@ let app = new Vue({
       let i = p.length - 1;
       let c = p[i];
       let sp = this.counts[c];
-      let ep = (this.alphabetMap[c]+1 > this.alphabet.length) 
+      let ep = (this.alphabetMap[c]+1 >= this.alphabet.length) 
         ? this.bwt.length - 1 
         : this.counts[this.alphabet[this.alphabetMap[c]+1]];
 
