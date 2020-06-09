@@ -2,17 +2,39 @@ const template = `
   <div id="app">
     <h1>FM-Index: Backward Search Visualizer</h1>
     
-    <div style="display: flex; flex-direction: row">
+    <div style="display: flex; margin: 1rem; margin-top: none;flex-direction: column; align-items: center;">
+      <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;">
+        <label for="text">Text</label>
+        <input name="text" type="text" maxlength="32" v-model="inputText"/>
+      </div>
+      
+      <div style="display: flex; align-items: center; width: 18rem; margin-top: 0.5rem; justify-content: space-between;">
+        <label for="query">Query</label>
+        <input name="query" type="text" v-model="searchQuery"/>
+      </div>
+      <div style="display: flex; margin-top: 0.5rem;">
+      <button @click="initializeSearch">Start Search</button>
+      <button @click="previousSearch" :disabled="!searchStarted"><span class="material-icons">
+      skip_previous
+      </span></button>
+      <button @click="advanceSearch" :disabled="!searchStarted"><span class="material-icons">
+      skip_next
+      </span></button>
+      <button @click="resetSearch">Clear</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: row; margin-top: 0.5rem">
       <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchText" >
         <div>{{ letter }}</div>
-        <div>{{ i }}</div>
+        <!--<div style="color: #aaa">{{ i }}</div>-->
       </div>
     </div>
     
     <div style="display: flex; flex-direction: row; margin-top: 0.5rem;">
       <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchQuery" >
         <div :class="{active: search.i === i, green: search.i === i+1 && search.highlitIndices.length > 0}">{{ letter }}</div>
-        <div :class="{'active-index': search.i === i}">{{ i }}</div>
+        <!--<div :class="{'active-index': search.i === i}">{{ i }}</div>-->
       </div>
     </div>
 
@@ -31,7 +53,11 @@ const template = `
       >
         <td 
           class="left-notes"
-        >{{ (i === search.sp) ? 'start' : '' }}{{ (i === search.ep) ? 'end' : '' }}</td>
+        >
+          {{ (i === search.sp) ? 'start ' : '' }}
+          {{ (i === search.ep) ? 'end ' : '' }}
+          <i v-show="i===search.sp || i === search.ep" class="material-icons">arrow_right_alt</i>
+        </td>
         <td 
           class="left-index"
         >{{ i }}</td>
@@ -44,20 +70,23 @@ const template = `
             'border-left': (i >= search.sp && i < search.ep && j === 0) ? 'solid #333 1px' : 'solid #0000 1px',
             'border-right': (i >= search.sp && i < search.ep && j === bwt.length - 1) ? 'solid #333 1px' : 'solid #0000 1px',
           }"
-          :class="{inactive: !(j === 0 || j === searchText.length - 1), active: (i >= search.sp && i < search.ep && j === 0), green: (j === bwt.length-1 && search.highlitIndices.includes(i))}"
+          :class="{'match': search.i === 0 && i >= search.sp && i < search.ep && j < searchQuery.length,'f-column': j === 0, 'l-column': j === bwt.length - 1, inactive: !(j === 0 || j === searchText.length - 1), active: (i >= search.sp && i < search.ep && j === 0), green: (j === bwt.length-1 && search.highlitIndices.includes(i))}"
         >{{ c }}<sub v-show="j === 0">{{ counts[c] !== undefined ? i - counts[c] : "" }}</sub><sub v-show="j === bwt.length-1">{{ occurrences[c] !== undefined ? occurrences[c][i] : "" }}</sub>
           </td>
           <td 
             class="right-notes"
           >
-          {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + i + ') = ' + occurrences[searchQuery[search.i-1]][i-1]  : '' }}
-          {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
+          {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
+          {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
           </td>
       </tr>
       <tr>
         <td 
           class="left-notes"
-        >{{ (search.ep === bwt.length) ? 'end' : '' }}</td>
+        >
+          {{ (search.ep === bwt.length) ? 'end' : '' }}
+          <i v-show="search.ep === bwt.length" class="material-icons">arrow_right_alt</i>
+        </td>
         <td 
           class="left-index"
         ></td>
@@ -78,23 +107,7 @@ const template = `
     <!--<div style="margin-top: 0.5rem">{{ bwt }}</div>-->
     <!--<div style="margin-top: 0.5rem">{{ encodeMtf(bwt) }}</div>-->
 
-    <div style="display: flex; flex-direction: column; align-items: center;">
-      <div style="display: flex; align-items; center; width: 14rem; margin-top: 1rem; justify-content: space-between;">
-        <label for="text">Text</label>
-        <input name="text" type="text" v-model="inputText"/>
-      </div>
-      
-      <div style="display: flex; align-items: center; width: 14rem; margin-top: 1rem; justify-content: space-between;">
-        <label for="query">Query</label>
-        <input name="query" type="text" v-model="searchQuery"/>
-      </div>
-      <div style="display: flex; margin-top: 1rem;">
-      <button @click="initializeSearch">Start Search</button>
-      <button @click="previousSearch" :disabled="!searchStarted">Previous Step</button>
-      <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
-      <button @click="resetSearch">Clear</button>
-      </div>
-    </div>
+    
 
     <!--<div>Character: {{ search.c }}</div>
     <div>Query index: {{ search.i }}</div>

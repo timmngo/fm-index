@@ -48,13 +48,36 @@ td {
   
 }
 
+.inactive {
+  color: #aaa;
+}
+
 .left-notes {
   width: 4rem;
-  /* grid-column: start / second; */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.left-notes i {
+  margin-left: 0.25rem;
 }
 
 .left-index {
   width: 1.7rem;
+}
+
+.f-column {
+  font-weight: bold;
+}
+
+.match {
+  font-weight: bold;
+  color: #333;
+}
+
+.l-column {
+  font-weight: bold;
 }
 
 .right-notes {
@@ -77,9 +100,13 @@ sub {
 input {
   font-family: "Assistant", sans-serif;
   padding: 0.25rem 0.5rem;
+  width: 14rem;
 }
 
 button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0.25rem 0.5rem;
   border: solid #333 1px;
   margin: 0.125rem;
@@ -133,9 +160,7 @@ label {
   line-height: 1.25rem;
 }
 
-.inactive {
-  color: #aaa;
-}
+
 
 .font-adaptive {
   font-size: 16px;
