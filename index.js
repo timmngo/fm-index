@@ -1,8 +1,10 @@
 const template = `
   <div id="app">
-    <h1>FM-Index: Backward Search Visualizer</h1>
+
+    <div id="controls">
+
+      <h1>FM-Index: Backward Search Visualizer</h1>
     
-    <div style="display: flex; margin: 1rem; margin-top: none;flex-direction: column; align-items: center;">
       <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;">
         <label for="text">Text</label>
         <input name="text" type="text" maxlength="32" v-model="inputText"/>
@@ -12,14 +14,34 @@ const template = `
         <label for="query">Query</label>
         <input name="query" type="text" v-model="searchQuery"/>
       </div>
-      <div style="display: flex; margin-top: 0.5rem;">
-      <button @click="initializeSearch">Start Search</button>
-      <button @click="previousSearch" :disabled="!searchStarted">Previous Step</button>
-      <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
-      <button @click="resetSearch">Clear</button>
+
+      <div style="display: flex; align-items: center; width: 18rem; margin-top: 0.5rem; justify-content: space-between;">
+        <label for="show-matrix">Show BWT Matrix</label>
+        <input name="show-matrix" type="checkbox" style="width: 2rem" v-model="showMatrix"/>
       </div>
+
+      <div class="buttons" style="">
+        <button @click="initializeSearch">Start Search</button>
+        <button @click="resetSearch">Clear</button>
+        <button @click="previousSearch" :disabled="!searchStarted">Previous Step</button>
+        <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
+      </div>
+
+      <div style="height: 7rem">
+        <div style="margin-top: 1rem; width: 19rem;">{{ description }}</div>
+
+        <div style="margin-top: 0.5rem">
+          {{ nextStartEquation }}
+        </div>
+
+        <div style="margin-top: 0.5rem">
+          {{ nextEndEquation }}
+        </div>
+      </div>
+
     </div>
 
+    <div id="bwt">
     <div style="display: flex; flex-direction: row; margin-top: 0.5rem">
       <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchText" >
         <div>{{ letter }}</div>
@@ -33,71 +55,68 @@ const template = `
         <!--<div :class="{'active-index': search.i === i}">{{ i }}</div>-->
       </div>
     </div>
-
-
     <table>
     <thead>
-      <tr>
+      <tr :style="dynamicGridStyle">
         <th class="left-notes"></th>
         <th class="left-index"></th>
-        <th class="cell" v-for="c, i in rotations[0]">{{ (i == 0) ? 'F' : ''}}{{ (i === bwt.length - 1) ? 'L' : ''  }}</th>
+        <th class="cell" v-for="c, i in rotationsFiltered[0]">
+          {{ (i == 0) ? 'F' : ''}}{{ (i === tableWidth - 1) ? 'L' : ''  }}
+        </th>
       </tr>
     </thead>
     <tbody style="display: flex; flex-direction: column">
       
-      <tr v-for="(r, i) in rotations" 
-      >
-        <td 
-          class="left-notes"
-        >
-          {{ (i === search.sp) ? 'start ' : '' }}
-          {{ (i === search.ep) ? 'end ' : '' }}
+      <tr v-for="(r, i) in rotationsFiltered" :style="dynamicGridStyle">
+        <td class="left-notes">
+          <span class="index-label">{{ (i === search.sp) ? 'start ' : '' }}</span>
+          <span class="index-label">{{ (i === search.ep) ? 'end ' : '' }}</span>
           <i v-show="i===search.sp || i === search.ep" class="material-icons">arrow_right_alt</i>
         </td>
-        <td 
-          class="left-index"
-        >{{ i }}</td>
+        <td class="left-index">
+          {{ i }}
+        </td>
         <td 
           v-for="(c, j) in r" 
           class="cell"
-          :style="{ 
-            'border-top': (i === search.sp) ? 'solid #333 1px' : 'solid #0000 1px',
-            'border-bottom': (i === search.ep-1) ? 'solid #333 1px' : 'solid #0000 1px',
-            'border-left': (i >= search.sp && i < search.ep && j === 0) ? 'solid #333 1px' : 'solid #0000 1px',
-            'border-right': (i >= search.sp && i < search.ep && j === bwt.length - 1) ? 'solid #333 1px' : 'solid #0000 1px',
+          :class="{
+            'match': search.i === 0 && i >= search.sp && i < search.ep && j < searchQuery.length,
+            'f-column': j === 0, 'l-column': j === tableWidth - 1, 
+            active: (i >= search.sp && i < search.ep && j === 0), 
+            inactive: !(j === 0 || j === tableWidth-1), 
+            green: (j === tableWidth-1 && search.highlitIndices.includes(i)),
+            'border-top': (i === search.sp),
+            'border-right': (i >= search.sp && i < search.ep && j === tableWidth - 1),
+            'border-bottom': (i === search.ep-1),
+            'border-left': (i >= search.sp && i < search.ep && j === 0),
           }"
-          :class="{'match': search.i === 0 && i >= search.sp && i < search.ep && j < searchQuery.length,'f-column': j === 0, 'l-column': j === bwt.length - 1, inactive: !(j === 0 || j === searchText.length - 1), active: (i >= search.sp && i < search.ep && j === 0), green: (j === bwt.length-1 && search.highlitIndices.includes(i))}"
-        >{{ c }}<sub v-show="j === 0">{{ counts[c] !== undefined ? i - counts[c] : "" }}</sub><sub v-show="j === bwt.length-1">{{ occurrences[c] !== undefined ? occurrences[c][i] : "" }}</sub>
-          </td>
-          <td 
-            class="right-notes"
-          >
+        >
+          {{ c }}<sub v-show="j === 0">{{ counts[c] !== undefined ? i - counts[c] : "" }}</sub><sub v-show="j === tableWidth-1">{{ occurrences[c] !== undefined ? occurrences[c][i] : "" }}</sub>
+        </td>
+        <td class="right-notes">
           {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
           {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
-          </td>
+        </td>
       </tr>
-      <tr>
-        <td 
-          class="left-notes"
-        >
+
+      <tr :style="dynamicGridStyle">
+        <td class="left-notes">
           {{ (search.ep === bwt.length) ? 'end' : '' }}
           <i v-show="search.ep === bwt.length" class="material-icons">arrow_right_alt</i>
         </td>
-        <td 
-          class="left-index"
-        ></td>
+        <td class="left-index"></td>
         <td class="cell" v-for="c, i in rotations[0]"></td>
-        <td 
-          class="right-notes"  
-        >{{ (search.ep === bwt.length && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}</td>
+        <td class="right-notes">
+          {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
+        </td>
       </tr>
+
     </tbody>
 
     </table>
 
-    <div style="width: 19rem; height: 7rem;">{{ description }}</div>
 
-    
+    </div>
     
 
     <!--<div style="margin-top: 0.5rem">{{ bwt }}</div>-->
@@ -134,6 +153,7 @@ let app = new Vue({
     },],
     currentSearchState: 0,
     searchStarted: false,
+    showMatrix: true,
   },
   watch: {
     inputText() {
@@ -159,6 +179,13 @@ let app = new Vue({
       }
       return arr.sort();
     },
+    rotationsFiltered() {
+      if (this.showMatrix) {
+        return this.rotations;
+      } else {
+        return this.rotations.map(r => r[0] + r[r.length-1]);
+      }
+    },
     sa() {
       return this.rotations.map(x => x[0]).join("")
     },
@@ -172,23 +199,49 @@ let app = new Vue({
         return desc;
       }
       if (c !== null && ep === undefined) {
-        return `The character '${this.search.c}' was not found. No matches were found. ` 
+        return `The character '${c}' was not found. No matches were found. ` 
       }
       if (ep >= sp) {
-        desc += `The character '${this.search.c}' is found in the first column using index mapping. ` 
+        desc += `The character '${c}' is found in the first column using index mapping. ` 
       } else {
-        return `The character '${this.search.c}' was not found. No matches were found. ` 
+        return `The character '${c}' was not found. No matches were found. ` 
       }
       if (this.search.i > 0) {
-        desc += `The next character to search in the right column for is '${this.searchQuery[this.search.i-1]}'. `;
+        desc += `The next character to search for in L is '${this.searchQuery[i-1]}'. `;
       } else if (ep - sp > 1 || ep - sp === 0) {
-        desc += `The search is complete. ${this.search.ep - this.search.sp} matches were found. `
+        desc += `The search is complete. ${ep - sp} matches were found. `
       } else if (ep - sp === 1) {
         desc += `The search is complete. ${ep - sp} match was found. `
       }
       return desc;
       
     },
+    nextStartEquation() {
+      const { c, i, sp, ep } = this.search;
+      if (c === null || i === 0) {
+        return '';
+      }
+      let cNext = this.searchQuery[i-1];
+      return `Next start index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
+    },
+    nextEndEquation() {
+      const { c, i, sp, ep } = this.search;
+      if (c === null || i === 0) {
+        return '';
+      }
+      let cNext = this.searchQuery[i-1];
+      return `Next end index = C('${cNext}') + Occ('${cNext}',${ep}) = ${this.counts[cNext] + this.occurrences[cNext][ep]}`;
+    },
+    dynamicGridStyle() {
+      return {
+        display: 'grid',
+        gridTemplateColumns: `repeat(${this.tableWidth + 3}, minmax(0.5rem, 2rem))`,
+        fontSize: `calc(14px + 4 * ((100vw - 320px) / 680) - 3 * ((${this.tableWidth}px - 14px) / 18))`,
+      };
+    },
+    tableWidth() {
+      return this.rotationsFiltered[0].length;
+    }
   },
   created() {
 
@@ -198,7 +251,7 @@ let app = new Vue({
   },
   methods: {
     encodeMtf(word) {
-      let init = {wordAsNumbers: [], charList: 'abcdefghijklmnopqrstuvwxyz'.split('')};
+      let init = {wordAsNumbers: [], charList: '$abcdefghijklmnopqrstuvwxyz'.split('')};
      
       return word.split('').reduce(function (acc, char) {
         let charNum = acc.charList.indexOf(char); //get index of char
@@ -209,7 +262,7 @@ let app = new Vue({
     },
      
     decodeMtf(numList) {
-      let init = {word: '', charList: 'abcdefghijklmnopqrstuvwxyz'.split('')};
+      let init = {word: '', charList: '$abcdefghijklmnopqrstuvwxyz'.split('')};
      
       return numList.reduce(function (acc, num) {
         acc.word += acc.charList[num];
