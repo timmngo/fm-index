@@ -5,7 +5,7 @@ const template = `
 
       <h1>FM-Index: Backward Search Visualizer</h1>
     
-      <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;">
+      <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;" >
         <label for="text">Text</label>
         <input name="text" type="text" maxlength="32" v-model="inputText"/>
       </div>
@@ -27,7 +27,7 @@ const template = `
         <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
       </div>
 
-      <div style="height: 7rem">
+      <div style="min-height: 9rem">
         <div style="margin-top: 1rem; width: 19rem;">{{ description }}</div>
 
         <div style="margin-top: 0.5rem">
@@ -41,79 +41,78 @@ const template = `
 
     </div>
 
-    <div id="bwt">
-    <div style="display: flex; flex-direction: row; margin-top: 0.5rem">
-      <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchText" >
-        <div>{{ letter }}</div>
-        <!--<div style="color: #aaa">{{ i }}</div>-->
+    <div id="bwt" :class="{ 'hide-matrix': !showMatrix }">
+      <div style="display: flex; flex-direction: row; margin-top: 0.5rem" :style="dynamicFontStyle" >
+        <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchText" >
+          <div>{{ letter }}</div>
+          <!--<div style="color: #aaa">{{ i }}</div>-->
+        </div>
       </div>
-    </div>
-    
-    <div style="display: flex; flex-direction: row; margin-top: 0.5rem;">
-      <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchQuery" >
-        <div :class="{active: search.i === i, green: search.i === i+1 && search.highlitIndices.length > 0}">{{ letter }}</div>
-        <!--<div :class="{'active-index': search.i === i}">{{ i }}</div>-->
-      </div>
-    </div>
-    <table>
-    <thead>
-      <tr :style="dynamicGridStyle">
-        <th class="left-notes"></th>
-        <th class="left-index"></th>
-        <th class="cell" v-for="c, i in rotationsFiltered[0]">
-          {{ (i == 0) ? 'F' : ''}}{{ (i === tableWidth - 1) ? 'L' : ''  }}
-        </th>
-      </tr>
-    </thead>
-    <tbody style="display: flex; flex-direction: column">
       
-      <tr v-for="(r, i) in rotationsFiltered" :style="dynamicGridStyle">
-        <td class="left-notes">
-          <span class="index-label">{{ (i === search.sp) ? 'start ' : '' }}</span>
-          <span class="index-label">{{ (i === search.ep) ? 'end ' : '' }}</span>
-          <i v-show="i===search.sp || i === search.ep" class="material-icons">arrow_right_alt</i>
-        </td>
-        <td class="left-index">
-          {{ i }}
-        </td>
-        <td 
-          v-for="(c, j) in r" 
-          class="cell"
-          :class="{
-            'match': search.i === 0 && i >= search.sp && i < search.ep && j < searchQuery.length,
-            'f-column': j === 0, 'l-column': j === tableWidth - 1, 
-            active: (i >= search.sp && i < search.ep && j === 0), 
-            inactive: !(j === 0 || j === tableWidth-1), 
-            green: (j === tableWidth-1 && search.highlitIndices.includes(i)),
-            'border-top': (i === search.sp),
-            'border-right': (i >= search.sp && i < search.ep && j === tableWidth - 1),
-            'border-bottom': (i === search.ep-1),
-            'border-left': (i >= search.sp && i < search.ep && j === 0),
-          }"
-        >
-          {{ c }}<sub v-show="j === 0">{{ counts[c] !== undefined ? i - counts[c] : "" }}</sub><sub v-show="j === tableWidth-1">{{ occurrences[c] !== undefined ? occurrences[c][i] : "" }}</sub>
-        </td>
-        <td class="right-notes">
-          {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
-          {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
-        </td>
-      </tr>
+      <div style="display: flex; flex-direction: row; margin-top: 0.5rem;" :style="dynamicFontStyle" >
+        <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchQuery" >
+          <div :class="{active: search.i === i, green: search.i === i+1 && search.highlitIndices.length > 0}">{{ letter }}</div>
+          <!--<div :class="{'active-index': search.i === i}">{{ i }}</div>-->
+        </div>
+      </div>
+      <table>
+      <thead>
+        <tr :style="dynamicGridStyle">
+          <th class="left-notes"></th>
+          <th class="left-index"></th>
+          <th class="cell" v-for="c, i in rotationsFiltered[0]">
+            {{ (i == 0) ? 'F' : ''}}{{ (i === tableWidth - 1) ? 'L' : ''  }}
+          </th>
+        </tr>
+      </thead>
+      <tbody style="display: flex; flex-direction: column">
+        
+        <tr v-for="(r, i) in rotationsFiltered" :style="dynamicGridStyle">
+          <td class="left-notes">
+            <span class="index-label">{{ (i === search.sp) ? 'start ' : '' }}</span>
+            <span class="index-label">{{ (i === search.ep) ? 'end ' : '' }}</span>
+            <i v-show="i===search.sp || i === search.ep" class="material-icons">arrow_right_alt</i>
+          </td>
+          <td class="left-index">
+            {{ i }}
+          </td>
+          <td 
+            v-for="(c, j) in r" 
+            class="cell"
+            :class="{
+              'match': search.i === 0 && i >= search.sp && i < search.ep && j < searchQuery.length,
+              'f-column': j === 0, 'l-column': j === tableWidth - 1, 
+              active: (i >= search.sp && i < search.ep && j === 0), 
+              inactive: !(j === 0 || j === tableWidth-1), 
+              green: (j === tableWidth-1 && search.highlitIndices.includes(i)),
+              'border-top': (i === search.sp || i === search.ep),
+              'border-right': (i >= search.sp && i < search.ep && j === tableWidth - 1),
+              'border-left': (i >= search.sp && i < search.ep && j === 0),
+            }"
+          >
+            {{ c }}<sub v-show="j === 0">{{ counts[c] !== undefined ? i - counts[c] : "" }}</sub><sub v-show="j === tableWidth-1">{{ occurrences[c] !== undefined ? occurrences[c][i] : "" }}</sub>
+          </td>
+          <td class="right-notes">
+            {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
+            {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
+          </td>
+        </tr>
 
-      <tr :style="dynamicGridStyle">
-        <td class="left-notes">
-          {{ (search.ep === bwt.length) ? 'end' : '' }}
-          <i v-show="search.ep === bwt.length" class="material-icons">arrow_right_alt</i>
-        </td>
-        <td class="left-index"></td>
-        <td class="cell" v-for="c, i in rotations[0]"></td>
-        <td class="right-notes">
-          {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
-        </td>
-      </tr>
+        <tr :style="dynamicGridStyle">
+          <td class="left-notes">
+            {{ (search.ep === bwt.length) ? 'end' : '' }}
+            <i v-show="search.ep === bwt.length" class="material-icons">arrow_right_alt</i>
+          </td>
+          <td class="left-index"></td>
+          <td class="cell" :class="{'border-top': (search.ep === bwt.length)}" v-for="c, i in rotations[0]"></td>
+          <td class="right-notes">
+            {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
+          </td>
+        </tr>
 
-    </tbody>
+      </tbody>
 
-    </table>
+      </table>
 
 
     </div>
@@ -218,25 +217,34 @@ let app = new Vue({
     },
     nextStartEquation() {
       const { c, i, sp, ep } = this.search;
-      if (c === null || i === 0) {
+      if (c === null || i === 0 || this.counts[c] === undefined) {
         return '';
       }
       let cNext = this.searchQuery[i-1];
-      return `Next start index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
+      if (this.counts[cNext] !== undefined) {
+        return `Next start index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
+      }
     },
     nextEndEquation() {
       const { c, i, sp, ep } = this.search;
-      if (c === null || i === 0) {
+      if (c === null || i === 0 || this.counts[c] === undefined) {
         return '';
       }
       let cNext = this.searchQuery[i-1];
-      return `Next end index = C('${cNext}') + Occ('${cNext}',${ep}) = ${this.counts[cNext] + this.occurrences[cNext][ep]}`;
+      if (this.counts[cNext] !== undefined) {
+        return `Next end index = C('${cNext}') + Occ('${cNext}',${ep}) = ${this.counts[cNext] + this.occurrences[cNext][ep]}`;
+      }
+    },
+    dynamicFontStyle() {
+      return {
+        fontSize: this.tableWidth < 14 ? '18px' : `calc(18px  - 3 * ((${this.tableWidth}px - 14px) / 18))` ,
+      }
     },
     dynamicGridStyle() {
       return {
         display: 'grid',
         gridTemplateColumns: `repeat(${this.tableWidth + 3}, minmax(0.5rem, 2rem))`,
-        fontSize: `calc(14px + 4 * ((100vw - 320px) / 680) - 3 * ((${this.tableWidth}px - 14px) / 18))`,
+        fontSize: `calc(14px + 4 * ((100vw - 320px) / 680) - 3 * ((${this.tableWidth}px - 14px) / 18))` ,
       };
     },
     tableWidth() {
@@ -303,7 +311,7 @@ let app = new Vue({
 
     initializeSearch() {
 
-      if (this.searchQuery.length === 0 || this.inputText.length === 0) {
+      if (this.searchQuery.length === 0 || this.inputText.length === 0 || this.searchQuery.length > this.inputText.length) {
         return;
       }
       this.computeCountsOccurences();
