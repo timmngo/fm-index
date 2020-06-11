@@ -154,7 +154,7 @@ let app = new Vue({
     currentSearchState: 0,
     searchStarted: false,
     showMatrix: true,
-    mode: "search",
+    mode: "bwt",
   },
   watch: {
     inputText() {
@@ -257,10 +257,11 @@ let app = new Vue({
     }
   },
   created() {
-
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('m');
+    this.mode = mode ? mode : 'search';
   },
   mounted() {
-
   },
   methods: {
     encodeMtf(word) {
