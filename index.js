@@ -28,15 +28,15 @@ const template = `
         <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
       </div>
 
-      <div v-show="search.c !== null" style="display: flex;  width: 24rem; flex-direction: row; margin-top: 0.75rem;" :style="dynamicFontStyle" >
-          <div style="display: flex; flex-direction: column; margin-bottom: 0.5rem; margin-right: 0.25rem;">
+      <div v-show="search.c !== null" id="c-container" style="display: flex;  width: 100%; flex-direction: row; margin-top: 0.75rem;" :style="dynamicFontStyle" >
+          <div style="display: flex; flex-direction: column; margin-bottom: 0.25rem; margin-right: 0.25rem;">
             <div class="c-entry" style="outline: none"></div>
             <div class="c-entry" style="outline: none; font-weight: bold">C</div>
           </div>
           <div style="display: flex;  flex-wrap: wrap; flex-direction: row;">
-            <div style="display: flex; flex-direction: column; margin-bottom: 0.5rem" v-for="(letter, i) in alphabet" >
+            <div style="display: flex; flex-direction: column; margin-bottom: 0.25rem" v-for="(letter, i) in alphabet" >
               <div class="c-entry" style="outline: none; font-weight: bold; border-bottom: none">{{ letter }}</div>
-              <div class="c-entry" :class="{green: searchStatus !== 'dead' && counts[searchQuery[search.i-1]] !== undefined && alphabetMap[searchQuery[search.i-1]] === i}" style="" >{{ counts[letter] }}</div>
+              <div class="c-entry" :class="{active: searchStatus !== 'dead' && counts[search.c] !== undefined && alphabetMap[search.c] === i, green: searchStatus !== 'dead' && counts[searchQuery[search.i-1]] !== undefined && alphabetMap[searchQuery[search.i-1]] === i}" style="" >{{ counts[letter] }}</div>
             </div>
           </div>
         </div>
@@ -220,7 +220,11 @@ let app = new Vue({
         return `The character '${c}' was not found. No matches were found. ` 
       }
       if (ep > sp) {
-        desc += `The character '${c}' is found in the first column using index mapping. ` 
+        if (this.currentSearchState === 0) {
+          desc += `The character '${c}' is found in the first column using the C table. ` ;
+        } else {
+          desc += `The character '${c}' is found in the first column using index mapping. ` ;
+        }
       } else {
         return `The character '${c}' was not found. No matches were found. ` 
       }
