@@ -60,6 +60,8 @@ h1 {
 h4 {
   margin-top: 0rem;
   color: #777;
+  font-weight: normal;
+  font-size: 0.8rem;
 }
 
 h4:hover {
