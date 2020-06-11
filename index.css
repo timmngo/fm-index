@@ -14,6 +14,7 @@ body {
   margin: 0;
   height: 100%;
   font-family: "Assistant", sans-serif;
+  color: #333;
 }
 
 #app {
@@ -52,7 +53,18 @@ body {
 }
 
 h1 {
-  width: 18rem;
+  width: 22rem;
+  margin-bottom: 0;
+}
+
+h4 {
+  margin-top: 0rem;
+  color: #777;
+}
+
+h4:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 table {
@@ -172,6 +184,7 @@ button {
   margin: 0.125rem;
   font-family: "Assistant", sans-serif;
   font-weight: bold;
+  color: #333;
   text-transform: uppercase;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   transition: all 0.08s cubic-bezier(.25,.8,.25,1);
@@ -186,6 +199,10 @@ button:hover {
 button:active {
   background-color: #666;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+button:disabled {
+  color: #777;
 }
 
 button:disabled:hover {
@@ -210,6 +227,10 @@ label {
 
 .green {
   background-color: #caeebb;
+}
+
+.white {
+  color: transparent;
 }
 
 .border-top::before,

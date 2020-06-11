@@ -3,16 +3,17 @@ const template = `
 
     <div id="controls">
 
-      <h1>FM-Index: Backward Search Visualizer</h1>
-    
+      <h1>{{ mode !== 'search' ? 'Reverse BWT' : 'FM-Index: Backward Search' }} Visualizer</h1>
+      <h4 @click="toggleMode"><a>Go to {{ mode === 'search' ? 'Reverse BWT' : 'FM-Index Backward Search' }} visualizer.</a></h4>
+
       <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;" >
         <label for="text">Text</label>
         <input name="text" type="text" maxlength="32" v-model="inputText"/>
       </div>
       
-      <div style="display: flex; align-items: center; width: 18rem; margin-top: 0.5rem; justify-content: space-between;">
+      <div v-show="mode === 'search'" style="display: flex; align-items: center; width: 18rem; margin-top: 0.5rem; justify-content: space-between;">
         <label for="query">Query</label>
-        <input name="query" type="text" v-model="searchQuery"/>
+        <input name="query" type="text" v-model="inputQuery"/>
       </div>
 
       <div style="display: flex; align-items: center; width: 18rem; margin-top: 0.5rem; justify-content: space-between;">
@@ -21,9 +22,9 @@ const template = `
       </div>
 
       <div class="buttons" style="">
-        <button @click="initializeSearch">Start Search</button>
+        <button @click="initializeSearch">Start</button>
         <button @click="resetSearch">Clear</button>
-        <button @click="previousSearch" :disabled="!searchStarted">Previous Step</button>
+        <button @click="previousSearch" :disabled="!searchStarted || currentSearchState === 0">Previous Step</button>
         <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
       </div>
 
@@ -34,7 +35,7 @@ const template = `
           {{ nextStartEquation }}
         </div>
 
-        <div style="margin-top: 0.5rem">
+        <div v-show="mode === 'search'" style="margin-top: 0.5rem">
           {{ nextEndEquation }}
         </div>
       </div>
@@ -42,7 +43,7 @@ const template = `
     </div>
 
     <div id="bwt" :class="{ 'hide-matrix': !showMatrix }">
-      <div style="display: flex; flex-direction: row; margin-top: 0.5rem" :style="dynamicFontStyle" >
+      <div v-show="mode === 'search'" style="display: flex; flex-direction: row; margin-top: 0.5rem" :style="dynamicFontStyle" >
         <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchText" >
           <div>{{ letter }}</div>
           <!--<div style="color: #aaa">{{ i }}</div>-->
@@ -51,7 +52,7 @@ const template = `
       
       <div style="display: flex; flex-direction: row; margin-top: 0.5rem;" :style="dynamicFontStyle" >
         <div class="string" style="display: flex; flex-direction: column" v-for="(letter, i) in searchQuery" >
-          <div :class="{active: search.i === i, green: search.i === i+1 && search.highlitIndices.length > 0}">{{ letter }}</div>
+          <div :class="{active: search.i === i, green: search.i === i+1 && search.highlitIndices.length > 0, white: (search.i > i+1 && mode === 'bwt')}">{{ letter }}</div>
           <!--<div :class="{'active-index': search.i === i}">{{ i }}</div>-->
         </div>
       </div>
@@ -69,9 +70,9 @@ const template = `
         
         <tr v-for="(r, i) in rotationsFiltered" :style="dynamicGridStyle">
           <td class="left-notes">
-            <span class="index-label">{{ (i === search.sp) ? 'start ' : '' }}</span>
-            <span class="index-label">{{ (i === search.ep) ? 'end ' : '' }}</span>
-            <i v-show="i===search.sp || i === search.ep" class="material-icons">arrow_right_alt</i>
+            <span class="index-label">{{ (i === search.sp && mode === 'search') ? 'start ' : '' }}</span>
+            <span class="index-label">{{ (i === search.ep && mode === 'search') ? 'end ' : '' }}</span>
+            <i v-show="(i===search.sp || i === search.ep) && mode === 'search'" class="material-icons">arrow_right_alt</i>
           </td>
           <td class="left-index">
             {{ i }}
@@ -94,19 +95,19 @@ const template = `
           </td>
           <td class="right-notes">
             {{ (i === search.sp && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
-            {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
+            {{ (i === search.ep && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0 && mode === 'search') ? "Occ(\'" + searchQuery[search.i-1] + "\', " + i + ') = ' + occurrences[searchQuery[search.i-1]][i]  : '' }}
           </td>
         </tr>
 
         <tr :style="dynamicGridStyle">
           <td class="left-notes">
-            {{ (search.ep === bwt.length) ? 'end' : '' }}
-            <i v-show="search.ep === bwt.length" class="material-icons">arrow_right_alt</i>
+            {{ (search.ep === bwt.length && mode === 'search') ? 'end' : '' }}
+            <i v-show="search.ep === bwt.length && mode === 'search'" class="material-icons">arrow_right_alt</i>
           </td>
           <td class="left-index"></td>
           <td class="cell" :class="{'border-top': (search.ep === bwt.length)}" v-for="c, i in rotations[0]"></td>
           <td class="right-notes">
-            {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0) ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
+            {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0 && mode === 'search') ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
           </td>
         </tr>
 
@@ -134,7 +135,7 @@ const template = `
 let app = new Vue({
   el: '#app',
   data: {
-    searchQuery: "abra",
+    inputQuery: "abra",
     inputText: "abracadabra",
     testStr: "bananabandanabandanabaaann",
     testStr2: "bananabnaaaaaa",
@@ -153,6 +154,7 @@ let app = new Vue({
     currentSearchState: 0,
     searchStarted: false,
     showMatrix: true,
+    mode: "search",
   },
   watch: {
     inputText() {
@@ -165,6 +167,9 @@ let app = new Vue({
   computed: {
     search() {
       return this.searchHistory[this.currentSearchState];
+    },
+    searchQuery() {
+      return (this.mode === 'bwt') ? this.searchText : this.inputQuery;
     },
     searchText() {
       return this.inputText + "$";
@@ -207,9 +212,9 @@ let app = new Vue({
       }
       if (this.search.i > 0) {
         desc += `The next character to search for in L is '${this.searchQuery[i-1]}'. `;
-      } else if (ep - sp > 1 || ep - sp === 0) {
+      } else if ((ep - sp > 1 || ep - sp === 0) && this.mode === 'search') {
         desc += `The search is complete. ${ep - sp} matches were found. `
-      } else if (ep - sp === 1) {
+      } else if (ep - sp === 1 && this.mode === 'search') {
         desc += `The search is complete. ${ep - sp} match was found. `
       }
       return desc;
@@ -222,7 +227,7 @@ let app = new Vue({
       }
       let cNext = this.searchQuery[i-1];
       if (this.counts[cNext] !== undefined) {
-        return `Next start index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
+        return `Next ${this.mode === 'search' ? 'start ' : '' }index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
       }
     },
     nextEndEquation() {
@@ -259,7 +264,8 @@ let app = new Vue({
   },
   methods: {
     encodeMtf(word) {
-      let init = {wordAsNumbers: [], charList: '$abcdefghijklmnopqrstuvwxyz'.split('')};
+      let alphabet = this.alphabet.split('');
+      let init = {wordAsNumbers: [], charList: alphabet};
      
       return word.split('').reduce(function (acc, char) {
         let charNum = acc.charList.indexOf(char); //get index of char
@@ -270,7 +276,8 @@ let app = new Vue({
     },
      
     decodeMtf(numList) {
-      let init = {word: '', charList: '$abcdefghijklmnopqrstuvwxyz'.split('')};
+      let alphabet = this.alphabet.split('');
+      let init = {word: '', charList: alphabet};
      
       return numList.reduce(function (acc, num) {
         acc.word += acc.charList[num];
@@ -311,7 +318,7 @@ let app = new Vue({
 
     initializeSearch() {
 
-      if (this.searchQuery.length === 0 || this.inputText.length === 0 || this.searchQuery.length > this.inputText.length) {
+      if (this.searchQuery.length === 0 || this.inputText.length === 0 || this.searchQuery.length > this.searchText.length) {
         return;
       }
       this.computeCountsOccurences();
@@ -413,6 +420,15 @@ let app = new Vue({
         highlitIndices: [],
       }];
       this.currentSearchState = 0;
+    },
+
+    toggleMode() {
+      this.resetSearch();
+      if (this.mode === 'search') {
+        this.mode = 'bwt';
+      } else {
+        this.mode = 'search';
+      }
     },
 
   },
