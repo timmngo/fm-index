@@ -154,7 +154,7 @@ let app = new Vue({
     currentSearchState: 0,
     searchStarted: false,
     showMatrix: true,
-    mode: "bwt",
+    mode: "search",
   },
   watch: {
     inputText() {
@@ -259,7 +259,17 @@ let app = new Vue({
   created() {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('m');
-    this.mode = mode ? mode : 'search';
+    const text = urlParams.get('t');
+    const pattern = urlParams.get('p');
+    if (mode) {
+      this.mode = mode;
+    }
+    if (text) {
+      this.inputText = text;
+    }
+    if (pattern) {
+      this.inputQuery = pattern;
+    }
   },
   mounted() {
   },
