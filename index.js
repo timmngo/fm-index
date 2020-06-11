@@ -105,7 +105,7 @@ const template = `
             <i v-show="search.ep === bwt.length && mode === 'search'" class="material-icons">arrow_right_alt</i>
           </td>
           <td class="left-index"></td>
-          <td class="cell" :class="{'border-top': (search.ep === bwt.length)}" v-for="c, i in rotations[0]"></td>
+          <td class="cell" :class="{'border-top': (search.ep === bwt.length)}" v-for="c, i in rotationsFiltered[0]"></td>
           <td class="right-notes">
             {{ (search.ep === tableWidth && occurrences[searchQuery[search.i-1]] !== undefined && search.i > 0 && mode === 'search') ? 'Occ(' + searchQuery[search.i-1] + ', ' + search.ep + ') = ' + occurrences[searchQuery[search.i-1]][search.ep]  : '' }}
           </td>
@@ -137,8 +137,6 @@ let app = new Vue({
   data: {
     inputQuery: "abra",
     inputText: "abracadabra",
-    testStr: "bananabandanabandanabaaann",
-    testStr2: "bananabnaaaaaa",
     counts: {},
     occurrences: {},
     alphabet: "",
