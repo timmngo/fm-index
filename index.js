@@ -3,8 +3,8 @@ const template = `
 
     <div id="controls">
 
-      <h1>{{ mode !== 'search' ? 'Reverse BWT' : 'FM-Index: Backward Search' }} Visualizer</h1>
-      <h4 @click="toggleMode"><a>Go to {{ mode === 'search' ? 'Reverse BWT' : 'FM-Index Backward Search' }} visualizer.</a></h4>
+      <h1>{{ mode !== 'search' ? 'BWT Inversion' : 'FM-Index: Backward Search' }} Visualizer</h1>
+      <h4 @click="toggleMode"><a>Go to {{ mode === 'search' ? 'BWT Inversion' : 'FM-Index Backward Search' }} visualizer.</a></h4>
 
       <div style="display: flex; align-items; center; width: 18rem; justify-content: space-between;" >
         <label for="text">Text</label>
