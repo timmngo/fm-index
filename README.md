@@ -1,1 +1,1 @@
-# fm-index
+# FM-Index Visualizer
