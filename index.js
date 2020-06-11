@@ -36,7 +36,7 @@ const template = `
           <div style="display: flex;  flex-wrap: wrap; flex-direction: row;">
             <div style="display: flex; flex-direction: column; margin-bottom: 0.5rem" v-for="(letter, i) in alphabet" >
               <div class="c-entry" style="outline: none; font-weight: bold; border-bottom: none">{{ letter }}</div>
-              <div class="c-entry" :class="{active: searchStatus !== 'dead' && counts[searchQuery[search.i-1]] !== undefined && alphabetMap[searchQuery[search.i-1]] === i}" style="" >{{ counts[letter] }}</div>
+              <div class="c-entry" :class="{green: searchStatus !== 'dead' && counts[searchQuery[search.i-1]] !== undefined && alphabetMap[searchQuery[search.i-1]] === i}" style="" >{{ counts[letter] }}</div>
             </div>
           </div>
         </div>

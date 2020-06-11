@@ -229,6 +229,7 @@ label {
 
 .green {
   background-color: #caeebb;
+  font-weight: bold;
 }
 
 .white {
@@ -284,6 +285,7 @@ label {
   height: 1.5rem;
   text-align: center;
   width: 1.5rem;
+  line-height: 1.5rem;
 }
 
 .font-adaptive {
@@ -297,7 +299,7 @@ label {
   }
 }
 
-@media screen and (max-width: 720px) {
+@media screen and (max-width: 800px) {
   #controls {
     align-items: center;
     max-width: none;
