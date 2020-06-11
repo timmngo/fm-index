@@ -28,6 +28,19 @@ const template = `
         <button @click="advanceSearch" :disabled="!searchStarted">Next Step</button>
       </div>
 
+      <div v-show="search.c !== null" style="display: flex;  width: 24rem; flex-direction: row; margin-top: 0.75rem;" :style="dynamicFontStyle" >
+          <div style="display: flex; flex-direction: column; margin-bottom: 0.5rem; margin-right: 0.25rem;">
+            <div class="c-entry" style="outline: none"></div>
+            <div class="c-entry" style="outline: none; font-weight: bold">C</div>
+          </div>
+          <div style="display: flex;  flex-wrap: wrap; flex-direction: row;">
+            <div style="display: flex; flex-direction: column; margin-bottom: 0.5rem" v-for="(letter, i) in alphabet" >
+              <div class="c-entry" style="outline: none; font-weight: bold; border-bottom: none">{{ letter }}</div>
+              <div class="c-entry" :class="{active: searchStatus !== 'dead' && counts[searchQuery[search.i-1]] !== undefined && alphabetMap[searchQuery[search.i-1]] === i}" style="" >{{ counts[letter] }}</div>
+            </div>
+          </div>
+        </div>
+
       <div style="min-height: 9rem">
         <div style="margin-top: 1rem; width: 19rem;">{{ description }}</div>
 
@@ -38,6 +51,9 @@ const template = `
         <div v-show="mode === 'search'" style="margin-top: 0.5rem">
           {{ nextEndEquation }}
         </div>
+
+        
+
       </div>
 
     </div>
@@ -203,7 +219,7 @@ let app = new Vue({
       if (c !== null && ep === undefined) {
         return `The character '${c}' was not found. No matches were found. ` 
       }
-      if (ep >= sp) {
+      if (ep > sp) {
         desc += `The character '${c}' is found in the first column using index mapping. ` 
       } else {
         return `The character '${c}' was not found. No matches were found. ` 
@@ -218,6 +234,14 @@ let app = new Vue({
       return desc;
       
     },
+    searchStatus() {
+      const { c, i, sp, ep } = this.search;
+      if (c === null || ep === undefined || ep <= sp) {
+        return 'dead';
+      } else {
+        return 'live';
+      }
+    },
     nextStartEquation() {
       const { c, i, sp, ep } = this.search;
       if (c === null || i === 0 || this.counts[c] === undefined) {
@@ -225,7 +249,11 @@ let app = new Vue({
       }
       let cNext = this.searchQuery[i-1];
       if (this.counts[cNext] !== undefined) {
-        return `Next ${this.mode === 'search' ? 'start ' : '' }index = C('${cNext}') + Occ('${cNext}',${sp}) = ${this.counts[cNext] + this.occurrences[cNext][sp]}`;
+        if (this.occurrences[cNext][ep] === this.occurrences[cNext][sp]) {
+          return '';
+        }
+        let spNext = this.counts[cNext] + this.occurrences[cNext][sp];
+        return `Next ${this.mode === 'search' ? 'start ' : '' }index = C('${cNext}') + Occ('${cNext}',${sp}) = ${spNext}`;
       }
     },
     nextEndEquation() {
@@ -235,7 +263,11 @@ let app = new Vue({
       }
       let cNext = this.searchQuery[i-1];
       if (this.counts[cNext] !== undefined) {
-        return `Next end index = C('${cNext}') + Occ('${cNext}',${ep}) = ${this.counts[cNext] + this.occurrences[cNext][ep]}`;
+        if (this.occurrences[cNext][ep] === this.occurrences[cNext][sp]) {
+          return '';
+        }
+        let epNext = this.counts[cNext] + this.occurrences[cNext][ep];
+        return `Next end index = C('${cNext}') + Occ('${cNext}',${ep}) = ${epNext}`;
       }
     },
     dynamicFontStyle() {
@@ -362,14 +394,20 @@ let app = new Vue({
     },
 
     advanceSearch() {
+      if (this.currentSearchState < this.searchHistory.length - 1) {
+        this.currentSearchState++;
+        return;
+      } 
 
       let { i, sp, ep } = this.search;
 
-      if (sp <= ep && i >= 1 && (this.currentSearchState === this.searchHistory.length - 1)) {
-        let c = this.searchQuery[i - 1];
+      if (sp <= ep && i >= 1) {
+        // Advance the search state
         i = i - 1;
-
+        let c = this.searchQuery[i];
+        
         if (this.occurrences[c] === undefined) {
+          // Next character to search for does not exist
           this.searchHistory.push({
             c: c,
             i: i,
@@ -384,6 +422,18 @@ let app = new Vue({
         sp = this.counts[c] + this.occurrences[c][sp];
         ep = this.counts[c] + this.occurrences[c][ep];
 
+        if (sp === ep) {
+          // Next character to search for does not exist
+          this.searchHistory.push({
+            c: c,
+            i: i,
+            sp: undefined,
+            ep: undefined,
+            highlitIndices: [],
+          });
+          this.currentSearchState++;
+          return;
+        }
 
         let highlitIndices = [];
         if (i > 0) {
@@ -402,12 +452,8 @@ let app = new Vue({
           highlitIndices: highlitIndices,
         });
         this.currentSearchState++;
-
-      } else if (this.currentSearchState < this.searchHistory.length - 1) {
-        this.currentSearchState++;
-      }
-
-
+        return;
+      } 
     },
 
     previousSearch() {
